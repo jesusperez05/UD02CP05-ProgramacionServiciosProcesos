@@ -1,17 +1,28 @@
 package org.example;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-    static void main() {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        IO.println(String.format("Hello and welcome!"));
+    static void main(String[] args) throws InterruptedException {
+        Ascensor ascensor = new Ascensor();
+        Thread hiloAscensor = new Thread(ascensor);
+        hiloAscensor.start();
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            IO.println("i = " + i);
-        }
+        Usuario u1 = new Usuario(1, 0, 3, ascensor);
+        Usuario u2 = new Usuario(2, 2, -1, ascensor);
+        Usuario u3 = new Usuario(3, 1, 5, ascensor);
+
+        Thread h1 = new Thread(u1);
+        Thread h2 = new Thread(u2);
+        Thread h3 = new Thread(u3);
+
+        h1.start();
+        Thread.sleep(500);
+        h2.start();
+        Thread.sleep(500);
+        h3.start();
+        h1.join();
+        h2.join();
+        h3.join();
+        ascensor.detenerAscensor();
+        hiloAscensor.join();
     }
 }
