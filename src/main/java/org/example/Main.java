@@ -1,9 +1,7 @@
 package org.example;
 
 public class Main {
-
     static void main() throws InterruptedException {
-
         Ascensor ascensor = new Ascensor();
 
         Thread hiloAscensor = new Thread(ascensor);
