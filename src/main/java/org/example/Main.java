@@ -1,8 +1,11 @@
 package org.example;
 
 public class Main {
-    static void main(String[] args) throws InterruptedException {
+
+    static void main() throws InterruptedException {
+
         Ascensor ascensor = new Ascensor();
+
         Thread hiloAscensor = new Thread(ascensor);
         hiloAscensor.start();
 
@@ -16,13 +19,18 @@ public class Main {
 
         h1.start();
         Thread.sleep(500);
+
         h2.start();
         Thread.sleep(500);
+
         h3.start();
+
         h1.join();
         h2.join();
         h3.join();
+
         ascensor.detenerAscensor();
+
         hiloAscensor.join();
     }
 }

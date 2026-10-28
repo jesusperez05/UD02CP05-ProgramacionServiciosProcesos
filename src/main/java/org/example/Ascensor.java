@@ -3,9 +3,9 @@ package org.example;
 import java.util.LinkedList;
 
 public class Ascensor implements Runnable {
+
     private int pisoActual = 0;
     private final LinkedList<Usuario> usuariosPendientes = new LinkedList<>();
-    private Usuario usuarioActual;
     private boolean ascensorActivo = true;
 
     public synchronized void agregarUsuario(Usuario usuario) {
@@ -21,72 +21,86 @@ public class Ascensor implements Runnable {
     @Override
     public void run() {
         boolean cicloEnMarcha = true;
+
         while (cicloEnMarcha) {
             atenderSiguienteUsuario();
-            cicloEnMarcha = ascensorActivo || !usuariosPendientes.isEmpty();
+            synchronized (this) {
+                cicloEnMarcha = ascensorActivo || !usuariosPendientes.isEmpty();
+            }
         }
+
         bajarHastaSotano();
         System.out.println("Ascensor llegó a piso -1. Fin del programa.");
     }
 
-    private synchronized void atenderSiguienteUsuario() {
-        boolean colaVacia = usuariosPendientes.isEmpty();
-        while (colaVacia && ascensorActivo) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                ascensorActivo = false;
+    private void atenderSiguienteUsuario() {
+        Usuario usuarioActual = null;
+        boolean continuar = true;
+
+        synchronized (this) {
+            while (usuariosPendientes.isEmpty() && ascensorActivo) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    continuar = false;
+                }
             }
-            colaVacia = usuariosPendientes.isEmpty();
+
+            if (!usuariosPendientes.isEmpty()) {
+                usuarioActual = usuariosPendientes.removeFirst();
+            } else {
+                continuar = false;
+            }
         }
 
-        boolean hayPendientes = !usuariosPendientes.isEmpty();
-        if (hayPendientes) {
-            usuarioActual = usuariosPendientes.removeFirst();
-
+        if (continuar) {
             moverHacia(usuarioActual.getPisoOrigen());
-            System.out.println("Usuario " + usuarioActual.getIdUsuario() + " sube al ascensor.");
+
+            usuarioActual.avisarLlegadaOrigen();
+            usuarioActual.esperarUsuarioDentro();
 
             moverHacia(usuarioActual.getPisoDestino());
-            System.out.println("Usuario " + usuarioActual.getIdUsuario() + " baja en piso " + usuarioActual.getPisoDestino());
 
-            usuarioActual.despertarUsuario();
+            usuarioActual.avisarDestino();
         }
     }
 
-    private synchronized void bajarHastaSotano() {
-        boolean pisoSuperior = pisoActual > -1;
-        while (pisoSuperior) {
+    private void bajarHastaSotano() {
+        boolean continuar = true;
+
+        while (pisoActual > -1 && continuar) {
             pisoActual--;
             System.out.println("Ascensor en piso " + pisoActual);
+
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                pisoSuperior = false;
+                continuar = false;
             }
-            pisoSuperior = pisoActual > -1;
         }
     }
 
     private void moverHacia(int pisoDestino) {
-        boolean enDestino = pisoActual == pisoDestino;
-        while (!enDestino) {
-            boolean subir = pisoActual < pisoDestino;
-            if (subir) {
+        boolean continuar = true;
+
+        while (pisoActual != pisoDestino && continuar) {
+
+            if (pisoActual < pisoDestino) {
                 pisoActual++;
             } else {
                 pisoActual--;
             }
+
             System.out.println("Ascensor en piso " + pisoActual);
+
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                enDestino = true;
+                continuar = false;
             }
-            enDestino = pisoActual == pisoDestino;
         }
     }
 }
